@@ -31,6 +31,9 @@ dev = ["pytest", "pytest-asyncio", "httpx", "ruff", "pyright"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# Um único event loop para todos os testes: o engine async é compartilhado na sessão.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 markers = ["e2e: fluxo completo com Gemini real"]
 addopts = "-m 'not e2e'"
 
