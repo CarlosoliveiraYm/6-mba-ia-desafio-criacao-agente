@@ -4,3 +4,4 @@ __pycache__/
 .adk/
 *.db
 spikes/**/estado.json
+tests/e2e/estado.json
