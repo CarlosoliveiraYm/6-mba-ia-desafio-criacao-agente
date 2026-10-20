@@ -48,6 +48,29 @@ def test_varios_pedidos_mantem_a_ordem_e_ignoram_os_respondidos():
     assert [p.id for p in extrair_pendencias(eventos)] == ["c2", "c3"]
 
 
+def _texto_do_morador(texto: str) -> Event:
+    return Event(author="user", content=types.Content(role="user", parts=[types.Part(text=texto)]))
+
+
+def test_nova_mensagem_do_morador_descarta_pendencias_anteriores():
+    eventos = [
+        _pedido("c1", "reservar_area", RESERVA),
+        _texto_do_morador("Libera a entrada da Joana Ribeiro no dia 2030-04-21."),
+        _pedido("c2", "autorizar_visitante", VISITANTE),
+    ]
+    assert [p.id for p in extrair_pendencias(eventos)] == ["c2"]
+
+
+def test_resposta_de_confirmacao_nao_descarta_pendencias():
+    """A FunctionResponse do morador não é texto: só resolve a própria pendência."""
+    eventos = [
+        _pedido("c1", "reservar_area", RESERVA),
+        _pedido("c2", "autorizar_visitante", VISITANTE),
+        _resposta("c1"),
+    ]
+    assert [p.id for p in extrair_pendencias(eventos)] == ["c2"]
+
+
 def test_eventos_sem_confirmacao():
     texto = Event(author="user", content=types.Content(role="user", parts=[types.Part(text="oi")]))
     assert extrair_pendencias([texto]) == []
