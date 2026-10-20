@@ -3,3 +3,4 @@
 __pycache__/
 .adk/
 *.db
+spikes/**/estado.json
