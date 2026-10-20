@@ -1005,6 +1005,12 @@ Pontos obrigatórios de `INSTRUCAO_RESERVAS` (pseudo-prompt):
 - Se a data estiver ocupada, dizer apenas que está indisponível.
 - Ao concluir, devolver o controle ao agente principal quando o assunto mudar.
 
+**Ajuste na implementação (I-4), para economizar chamadas ao modelo:**
+- `disallow_transfer_to_peers=False`: os especialistas de reservas e de visitantes transferem **direto** um para o outro.
+- A instrução manda **não transferir depois de responder**. O especialista só transfere quando a nova mensagem muda de assunto.
+- **Motivo:** no primeiro roteiro com o Gemini, o controle foi reservas → principal → visitantes → principal → reservas, com 3 a 5 chamadas por mensagem.
+- A retomada da confirmação não é afetada, porque o Runner retoma no autor da chamada (V-6).
+
 ---
 
 ### F-18 — Montar o especialista de visitantes
@@ -1031,6 +1037,10 @@ def criar_especialista_regulamento(modelo: str) -> AgentTool:
 Pontos de `INSTRUCAO_REGULAMENTO`: sempre chamar `buscar_regulamento`; responder em **até 3 frases**, só sobre o assunto perguntado, citando o artigo; **não** transcrever outros artigos nem outros capítulos; se o trecho não responder, dizer que o regulamento não trata do assunto.
 
 Pelo V-9, a execução interna roda em `InMemorySessionService`. Na sessão principal entram só a chamada de `especialista_regulamento` e a resposta curta. *(G-4 · CA-22)*
+
+**Ajuste na implementação (I-4):** `AgentTool(agent=..., skip_summarization=True)`. A resposta curta do especialista vira a resposta final do turno. Isso economiza a chamada em que o principal reescreveria o texto, e o regulamento passa por um modelo a menos.
+
+**Achado de cota (I-4):** o plano gratuito do projeto limita o `gemini-3.6-flash` a **20 requisições/dia** (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`). O fluxo de validação faz ~60. O modelo precisa ser trocado por um com cota gratuita maior, e a escolha fica registrada no `.env.example`.
 
 ---
 
@@ -1360,7 +1370,7 @@ Uma feature só é promovida ao build quando:
 | F-06 (I-2) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-07 … F-14 (I-2) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-15, F-16 (I-3) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| F-17 … F-20 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-17 … F-20 (I-4; validação com Gemini pendente de cota) | ☑ | ☑ | ☑ | ☑ | ◐ | ☐ |
 | F-21 … F-27 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-28 (banco/fixtures na I-2; LLM falso na I-5) | ☑ | ☑ | ☑ | ◐ | ☐ | ☐ |
 | F-29, F-30 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
