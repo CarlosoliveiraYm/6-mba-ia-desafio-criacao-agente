@@ -1042,6 +1042,27 @@ Pelo V-9, a execução interna roda em `InMemorySessionService`. Na sessão prin
 
 **Achado de cota (I-4):** o plano gratuito do projeto limita o `gemini-3.6-flash` a **20 requisições/dia** (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`). O fluxo de validação faz ~60. O modelo precisa ser trocado por um com cota gratuita maior, e a escolha fica registrada no `.env.example`.
 
+#### Validação da I-4 com Gemini real (`spikes/agentes/roteiro.py`, 2026-10-20)
+
+**Troca de modelo:**
+- O `gemini-2.5-flash-lite` devolveu **404 "no longer available to new users"**. Uma chave nova de avaliador também não teria acesso a ele.
+- **Modelo adotado: `gemini-3.5-flash-lite`**, para o principal e os especialistas. É o modelo Lite atual, recomendado pela própria API.
+
+**Problemas encontrados no fluxo de confirmação e corrigidos em código (G-1):**
+
+| # | Problema observado | Correção |
+|---|---|---|
+| C-1 | Depois de **negar**, o modelo recebia `{"error": "This tool call is rejected."}` e chamava a tool de novo, **criando uma pendência que ninguém pediu**. | `app/agents/callbacks.py`: `ajustar_resposta` (after_tool) troca o erro por `recusada_pelo_morador` e anota a ação em `temp:acoes_recusadas`. `bloquear_repeticao` (before_tool) devolve a recusa para qualquer repetição idêntica na mesma invocação, sem pedir nova confirmação. |
+| C-2 | Ao **aprovar uma pendência antiga** quando outro especialista estava ativo, o Runner retomou no agente errado e falhou: `ValueError: Tool 'reservar_area' not found` (seria um 500 na API). | `extrair_pendencias`: **uma nova mensagem de texto do morador descarta as pendências anteriores**. Elas somem de `confirmacoes_pendentes`, e responder a elas recebe 409. Nada executa sem confirmação, e esse caso tem comportamento livre no contrato. |
+| C-3 | Depois de **aprovar**, o modelo às vezes dizia "só será feita após a sua aprovação". | `ajustar_resposta` acrescenta `aprovada_pelo_morador: true` e `situacao: concluida` ao resultado aprovado. A instrução diz como responder nesse caso. |
+| C-4 | Com `AgentTool(skip_summarization=True)`, a resposta do regulamento chega como function response, não como texto, e a `resposta` ficava `""`. | `app/api/respostas.py`: `texto_da_resposta()` também lê o `result` da function response quando `skip_summarization` está ativo. |
+
+**Resultado final: 24/24 verificações dos passos 3–13 OK**, com sessões no PostgreSQL e reinício simulado (novo Runner + novo `DatabaseSessionService`):
+- **Isolamento do 302:** nenhum vazamento de `RSV-4821`, `Marina Duarte` ou `302`.
+- **Confirmações:** negar não grava; aprovar grava exatamente 1 vez; depois de respondido, o `id` sai das pendências.
+- **Regulamento:** a resposta da piscina cita o Art. 22 com "9h às 20h", e os eventos não têm marcadores de outros capítulos nem artigos integrais.
+- **Reinício:** a quantidade de eventos se mantém e a sessão continua respondendo.
+
 ---
 
 ### F-20 — Montar o agente principal e o `App` resumível do assistente
@@ -1370,8 +1391,9 @@ Uma feature só é promovida ao build quando:
 | F-06 (I-2) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-07 … F-14 (I-2) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-15, F-16 (I-3) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| F-17 … F-20 (I-4; validação com Gemini pendente de cota) | ☑ | ☑ | ☑ | ☑ | ◐ | ☐ |
-| F-21 … F-27 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-17 … F-20 (I-4; 24/24 no roteiro com Gemini) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| F-23 (adiantada na I-4) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| F-21, F-22, F-24 … F-27 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-28 (banco/fixtures na I-2; LLM falso na I-5) | ☑ | ☑ | ☑ | ◐ | ☐ | ☐ |
 | F-29, F-30 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-31 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
