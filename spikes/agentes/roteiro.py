@@ -16,6 +16,7 @@ from google.genai import types
 
 from app.agents.app import criar_runner
 from app.api.confirmacoes import extrair_pendencias, resposta_de_confirmacao
+from app.api.respostas import texto_da_resposta
 from app.config import carregar_config
 from app.db import encerrar_engine, iniciar_engine
 from app.db import repositorio as repo
@@ -38,18 +39,17 @@ class Conversa:
         self.runner, self.apto, self.sid = runner, apartamento, session_id
 
     async def _rodar(self, msg: types.Content) -> str:
-        textos = []
+        eventos = []
         async for ev in self.runner.run_async(
             user_id=self.apto, session_id=self.sid, new_message=msg
         ):
-            if ev.author != "user" and ev.content and ev.content.parts and not ev.partial:
-                textos += [p.text for p in ev.content.parts if p.text and not p.thought]
-                for fc in ev.get_function_calls():
-                    print(
-                        f"      · [{ev.author}] {fc.name}"
-                        f"({json.dumps(fc.args, ensure_ascii=False)[:90]})"
-                    )
-        return textos[-1].strip() if textos else ""
+            eventos.append(ev)
+            for fc in ev.get_function_calls():
+                print(
+                    f"      · [{ev.author}] {fc.name}"
+                    f"({json.dumps(fc.args, ensure_ascii=False)[:90]})"
+                )
+        return texto_da_resposta(eventos)
 
     async def eventos(self) -> list:
         s = await self.runner.session_service.get_session(
