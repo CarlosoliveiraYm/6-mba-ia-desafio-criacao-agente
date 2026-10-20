@@ -6,6 +6,7 @@ Sub-agente pelo mesmo motivo do especialista de reservas: a confirmação de
 
 from google.adk.agents import LlmAgent
 
+from app.agents.callbacks import ajustar_resposta, bloquear_repeticao
 from app.agents.modelo import criar_modelo
 from app.tools.visitantes import TOOLS_VISITANTES
 
@@ -23,7 +24,10 @@ ferramenta.
 - Para autorizar, chame autorizar_visitante diretamente. A entrada só é liberada depois \
 que o morador aprovar pelo aplicativo. Se o morador disser que já confirmou na conversa, \
 explique que a aprovação é feita pelo aplicativo e que a autorização continua pendente.
-- Se o morador recusar a aprovação, informe que a entrada não foi liberada.
+- Se o retorno da ferramenta trouxer "aprovada_pelo_morador", diga que a entrada do \
+visitante está autorizada para a data. Não diga que ainda falta aprovar.
+- Se o retorno trouxer "recusada_pelo_morador", diga apenas que a entrada não foi \
+liberada, sem pedir nova aprovação.
 - O morador só pode consultar e autorizar visitantes do próprio apartamento, e as \
 ferramentas já sabem qual é. Se ele pedir dados de outro apartamento, explique que você \
 só trata dos visitantes do apartamento desta sessão.
@@ -47,4 +51,6 @@ def criar_especialista_visitantes(nome_modelo: str) -> LlmAgent:
         instruction=INSTRUCAO_VISITANTES,
         tools=list(TOOLS_VISITANTES),
         disallow_transfer_to_peers=False,  # ver nota em app/agents/reservas.py
+        before_tool_callback=bloquear_repeticao,
+        after_tool_callback=ajustar_resposta,
     )

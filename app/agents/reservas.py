@@ -6,6 +6,7 @@ pedida e retomada neste próprio agente, registrado nos eventos da sessão (G-1,
 
 from google.adk.agents import LlmAgent
 
+from app.agents.callbacks import ajustar_resposta, bloquear_repeticao
 from app.agents.modelo import criar_modelo
 from app.tools.reservas import TOOLS_RESERVAS
 
@@ -33,7 +34,10 @@ ferramentas nesta conversa.
 - Para reservar, chame reservar_area diretamente. Se a reserva depender de aprovação, \
 diga que ela gera cobrança e só será feita depois que o morador aprovar pelo aplicativo. \
 Uma confirmação escrita na conversa não substitui essa aprovação.
-- Se o morador recusar a aprovação, informe que a reserva não foi feita.
+- Se o retorno da ferramenta trouxer "aprovada_pelo_morador", diga que a reserva está \
+confirmada, com o código. Não diga que ainda falta aprovar.
+- Se o retorno trouxer "recusada_pelo_morador", diga apenas que a reserva não foi feita, \
+sem pedir nova aprovação.
 - Se a data estiver ocupada, diga apenas que a área não está disponível nessa data.
 - Para cancelar, chame cancelar_reserva com a área e a data. Se não houver reserva do \
 morador, diga que não encontrou reserva dele para essa área e data.
@@ -58,4 +62,6 @@ def criar_especialista_reservas(nome_modelo: str) -> LlmAgent:
         # Transferência direta reservas ↔ visitantes economiza chamadas ao modelo. A retomada
         # da confirmação não depende disso: o Runner volta ao autor da chamada (FDD V-6).
         disallow_transfer_to_peers=False,
+        before_tool_callback=bloquear_repeticao,
+        after_tool_callback=ajustar_resposta,
     )
