@@ -1281,6 +1281,37 @@ async def lifespan(app):
 
 Não há `--reload` no comando oficial, e Ctrl+C encerra limpo. *(RNF-04 · CA-02 · passos 1, 13)*
 
+#### Implementação e validação da I-5 (F-21, F-22, F-24..F-27)
+
+**Implementação** (`app/main.py`, `app/api/schemas.py`, `scripts/api.py`):
+- **Fábrica:** `criar_api(cfg=None, modelo=None)`. O `lifespan` carrega a configuração, aplica o schema e cria o `DatabaseSessionService` e o Runner. `modelo` injeta o LLM falso nos testes.
+- **Classe `Assistente`:** guarda só infraestrutura (Runner e travas `asyncio.Lock` por sessão). As travas serializam requisições da **mesma** sessão; sessões diferentes continuam concorrentes.
+- **Dependência:** `AssistenteDep = Annotated[Assistente, Depends(...)]`, o idioma recomendado do FastAPI (ruff B008).
+- **Rota de confirmações:** relê os eventos **dentro** da trava antes de validar o `id`, de modo que um reenvio sequencial recebe 409.
+- **Erros do modelo ou do runtime:** a resposta é `200` com uma mensagem de desculpas e o erro vai para o log, nunca `5xx`.
+- **Decisão (comportamento livre no contrato):** `POST /sessoes` com apartamento inexistente responde **404**. Sem isso, a FK de `sessoes_apartamento` geraria um 500.
+- **`uv run api`:** aceita `--host` e `--port`, que por padrão são `0.0.0.0` e `8000`, e silencia os avisos `[EXPERIMENTAL]` do ADK.
+
+**Testes** (`tests/api/`, ADK real + PostgreSQL `aurora_test` + LLM falso `tests/stub_llm.py`), **14 testes**:
+- **Contrato:** `201` na criação de sessão, `404` para sessão inexistente e `404` para apartamento inexistente.
+- **Confirmações:**
+  - negar não grava; aprovar grava 1 vez; reenvio → `409`; `id` inexistente → `409`;
+  - uma confirmação enviada em outra sessão recebe `409`;
+  - uma nova mensagem descarta a pendência anterior (`409`);
+  - o visitante só é gravado após aprovação.
+- **Reservas:** a quadra não pede confirmação.
+- **Isolamento:** a sessão não revela nem cancela reserva do 302.
+- **Regulamento:** a resposta tem "20h" e os eventos não têm marcadores de outros capítulos.
+- **Reinício (`test_reinicio.py`):** uma nova instância da API devolve os mesmos eventos, aprova uma pendência criada antes do reinício e aceita novas mensagens.
+- **Disputa (`test_disputa.py`):** `asyncio.gather` de duas aprovações (101 e 201) → ambas `200` e exatamente 1 reserva.
+
+**Validação com o processo real e o Gemini:**
+- `uv run restaurar` e depois `uv run api`, com chamadas `curl`:
+  - passos 1, 2 e 9 OK (`201`, `409`, `404`);
+  - reserva do salão gerou pendência com `detalhes`, nada foi gravado antes da aprovação, a aprovação gerou a `RSV-10009` e o reenvio recebeu `409`.
+- **SIGINT (Ctrl+C) e nova subida sem restaurar:** 11 eventos antes e 11 depois, a reserva continuou valendo, a nova mensagem recebeu `200` e os eventos subiram para 16.
+- **Achado:** no texto da resposta, o modelo Lite escreveu "2020-04-20" para uma reserva gravada em 2030-04-20. A instrução dos especialistas passou a exigir repetir datas e códigos exatamente como vieram das ferramentas. O dado gravado sempre esteve correto.
+
 ---
 
 ### F-28 — Preparar a infraestrutura de testes
@@ -1393,8 +1424,8 @@ Uma feature só é promovida ao build quando:
 | F-15, F-16 (I-3) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-17 … F-20 (I-4; 24/24 no roteiro com Gemini) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-23 (adiantada na I-4) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| F-21, F-22, F-24 … F-27 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| F-28 (banco/fixtures na I-2; LLM falso na I-5) | ☑ | ☑ | ☑ | ◐ | ☐ | ☐ |
+| F-21, F-22, F-24 … F-27 (I-5) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| F-28 (banco/fixtures na I-2; LLM falso na I-5) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-29, F-30 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-31 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 

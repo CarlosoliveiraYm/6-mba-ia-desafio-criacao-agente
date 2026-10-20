@@ -77,7 +77,7 @@ Construir, com Google ADK, o assistente do Residencial Aurora exposto por uma AP
 | Pagamento e estorno | Não há. A taxa só decide se a reserva gera cobrança (e, portanto, se pede confirmação). |
 | Regras de antecedência, datas passadas, horários de uso e capacidade das áreas | Não são validadas. |
 | Duas respostas simultâneas para a **mesma** confirmação | Comportamento livre. O reenvio **sequencial** continua recebendo `409` (G-1). |
-| Apartamento inexistente em `dados/apartamentos.json` (na criação de sessão ou nas rotas de verificação) | Comportamento livre. |
+| Apartamento inexistente em `dados/apartamentos.json` (na criação de sessão ou nas rotas de verificação) | Comportamento livre. **Decisão:** `POST /sessoes` responde `404`; as rotas de verificação devolvem `[]`. |
 | Nova mensagem enviada enquanto existe confirmação pendente | Comportamento livre, **desde que nada execute sem confirmação**. |
 | Tom e redação das respostas | Livres, exceto nos pontos verificados no fluxo de validação (seção 13). |
 | Avaliações de modelo (evals) e deploy | Fora do escopo. |
