@@ -967,6 +967,18 @@ Algoritmo (determinístico, sem LLM):
 
 **Testes:** "Até que horas a piscina funciona aos domingos?" → Cap. IV com "20h" no trecho e sem "Capítulo" de outro número. "Posso ter cachorro?" → Cap. VIII.
 
+**Implementado na I-3** (`app/tools/regulamento.py`):
+- O índice tem 14 capítulos e 96 artigos (`**Art. N`). Cada artigo inclui seus incisos e parágrafos.
+- **Radical simples:** a normalização tira o plural em `-s` de palavras com mais de 4 letras. Termos com 5 letras ou mais também casam como **prefixo** (ex.: `funciona` casa com `funcionamento`).
+- **Pontuação:**
+  - +5 se o termo aparece no título;
+  - +3 se é sinônimo do capítulo;
+  - +1 se aparece no texto, contando cada termo distinto uma vez só, para que capítulos longos não sejam favorecidos.
+- **Assunto fora do regulamento:** se a melhor pontuação ficar abaixo de 2, a busca devolve `{"encontrado": false}`.
+- **Artigos devolvidos:** os de pontuação igual à melhor ou à melhor − 1, no máximo 3, em ordem numérica.
+- **Marcadores de vazamento** encontrados no regulamento: "coleira refletiva **cor de mostarda**" (Cap. VIII, Art. 54), "plástico bolha **lilás**" (Cap. IX, Art. 65) e "lona **xadrez vermelha**" (Cap. X, Art. 72). O teste da piscina verifica que nenhum deles aparece. O teste E2E do passo 12 deve verificar o mesmo nos eventos da sessão.
+- **Resultado medido:** a consulta da piscina devolve os Arts. 22 e 27, com 847 caracteres (~2% dos 44.488 do regulamento).
+
 ---
 
 ### F-17 — Montar o especialista de reservas
@@ -1347,7 +1359,7 @@ Uma feature só é promovida ao build quando:
 | F-01 … F-05 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-06 (I-2) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-07 … F-14 (I-2) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| F-15, F-16 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-15, F-16 (I-3) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-17 … F-20 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-21 … F-27 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-28 (banco/fixtures na I-2; LLM falso na I-5) | ☑ | ☑ | ☑ | ◐ | ☐ | ☐ |
