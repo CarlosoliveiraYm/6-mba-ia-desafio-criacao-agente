@@ -15,6 +15,10 @@ def iniciar_engine(database_url: str) -> AsyncEngine:
     return _engine
 
 
+def engine_iniciado() -> bool:
+    return _engine is not None
+
+
 def obter_engine() -> AsyncEngine:
     """Engine do processo. Se ninguém o iniciou (ex.: `adk web`), cria a partir do `.env`."""
     if _engine is None:

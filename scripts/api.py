@@ -1,16 +1,24 @@
 """Comando `uv run api`: sobe a API em http://localhost:8000 (F-27)."""
 
 import argparse
-import sys
+import logging
+import warnings
+
+import uvicorn
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="api", description="Sobe a API do Residencial Aurora em http://localhost:8000."
     )
-    parser.parse_args()
-    # A aplicação FastAPI (app.main) é implementada na iteração I-5 (F-21..F-27).
-    sys.exit("A API ainda não foi implementada (F-27, iteração I-5).")
+    parser.add_argument("--host", default="0.0.0.0")  # noqa: S104 (API local do desafio)
+    parser.add_argument("--port", type=int, default=8000)
+    args = parser.parse_args()
+
+    # Avisos de recursos experimentais do ADK poluem o log sem informação útil.
+    warnings.filterwarnings("ignore", message=r"\[EXPERIMENTAL\]")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    uvicorn.run("app.main:app", host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

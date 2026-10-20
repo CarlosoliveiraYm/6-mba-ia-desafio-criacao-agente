@@ -118,6 +118,32 @@ async def listar_reservas(conn: AsyncConnection, apartamento: str) -> list[dict]
     ]
 
 
+# --- Apartamentos e sessões ---------------------------------------------------
+
+
+async def apartamento_existe(conn: AsyncConnection, numero: str) -> bool:
+    resultado = await conn.execute(
+        text("SELECT EXISTS (SELECT 1 FROM apartamentos WHERE numero = :n)"), {"n": numero}
+    )
+    return bool(resultado.scalar_one())
+
+
+async def vincular_sessao(conn: AsyncConnection, session_id: str, apartamento: str) -> None:
+    """A-1 / G-2: vínculo imutável sessão → apartamento, gravado só na criação."""
+    await conn.execute(
+        text("INSERT INTO sessoes_apartamento (session_id, apartamento) VALUES (:sid, :apto)"),
+        {"sid": session_id, "apto": apartamento},
+    )
+
+
+async def apartamento_da_sessao(conn: AsyncConnection, session_id: str) -> str | None:
+    resultado = await conn.execute(
+        text("SELECT apartamento FROM sessoes_apartamento WHERE session_id = :sid"),
+        {"sid": session_id},
+    )
+    return resultado.scalar_one_or_none()
+
+
 # --- Visitantes --------------------------------------------------------------
 
 
