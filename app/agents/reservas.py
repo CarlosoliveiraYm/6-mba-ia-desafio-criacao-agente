@@ -7,7 +7,7 @@ pedida e retomada neste próprio agente, registrado nos eventos da sessão (G-1,
 from google.adk.agents import LlmAgent
 
 from app.agents.callbacks import ajustar_resposta, bloquear_repeticao
-from app.agents.modelo import criar_modelo
+from app.agents.modelo import BaseLlm, criar_modelo
 from app.tools.reservas import TOOLS_RESERVAS
 
 NOME = "especialista_reservas"
@@ -45,14 +45,17 @@ morador, diga que não encontrou reserva dele para essa área e data.
 - Se a nova mensagem for sobre visitantes, transfira direto para especialista_visitantes. \
 Para qualquer outro assunto que não seja reserva, transfira para aurora_principal.
 
+Ao responder, repita datas, códigos e nomes exatamente como vieram das \
+ferramentas, no formato AAAA-MM-DD.
+
 Responda em português, de forma breve.
 """
 
 
-def criar_especialista_reservas(nome_modelo: str) -> LlmAgent:
+def criar_especialista_reservas(modelo: str | BaseLlm) -> LlmAgent:
     return LlmAgent(
         name=NOME,
-        model=criar_modelo(nome_modelo),
+        model=criar_modelo(modelo),
         description=(
             "Consulta disponibilidade, reserva, cancela e lista as reservas de salão de "
             "festas, churrasqueira e quadra do apartamento do morador."

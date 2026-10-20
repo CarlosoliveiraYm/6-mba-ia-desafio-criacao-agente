@@ -6,7 +6,7 @@ nem a executar diretamente.
 
 from google.adk.agents import LlmAgent
 
-from app.agents.modelo import criar_modelo
+from app.agents.modelo import BaseLlm, criar_modelo
 from app.agents.regulamento import criar_especialista_regulamento
 from app.agents.reservas import criar_especialista_reservas
 from app.agents.visitantes import criar_especialista_visitantes
@@ -33,15 +33,18 @@ Não mencione dados de outros apartamentos. Responda em português, de forma bre
 """
 
 
-def criar_agente_principal(cfg: Config) -> LlmAgent:
+def criar_agente_principal(cfg: Config, modelo: BaseLlm | None = None) -> LlmAgent:
+    """`modelo` substitui o Gemini em todos os agentes (usado pelo LLM falso dos testes)."""
+    principal = modelo or cfg.modelo_principal
+    especialistas = modelo or cfg.modelo_especialistas
     return LlmAgent(
         name=NOME,
-        model=criar_modelo(cfg.modelo_principal),
+        model=criar_modelo(principal),
         description="Assistente virtual do Residencial Aurora.",
         instruction=INSTRUCAO_PRINCIPAL,
         sub_agents=[
-            criar_especialista_reservas(cfg.modelo_especialistas),
-            criar_especialista_visitantes(cfg.modelo_especialistas),
+            criar_especialista_reservas(especialistas),
+            criar_especialista_visitantes(especialistas),
         ],
-        tools=[criar_especialista_regulamento(cfg.modelo_especialistas)],
+        tools=[criar_especialista_regulamento(especialistas)],
     )

@@ -8,7 +8,7 @@ chamada da AgentTool e a resposta curta do especialista.
 from google.adk.agents import LlmAgent
 from google.adk.tools.agent_tool import AgentTool
 
-from app.agents.modelo import criar_modelo
+from app.agents.modelo import BaseLlm, criar_modelo
 from app.tools.regulamento import buscar_regulamento
 
 NOME = "especialista_regulamento"
@@ -28,10 +28,10 @@ Responda em português.
 """
 
 
-def criar_especialista_regulamento(nome_modelo: str) -> AgentTool:
+def criar_especialista_regulamento(modelo: str | BaseLlm) -> AgentTool:
     agente = LlmAgent(
         name=NOME,
-        model=criar_modelo(nome_modelo),
+        model=criar_modelo(modelo),
         description=(
             "Responde dúvidas sobre as regras do regulamento interno do condomínio "
             "(horários, piscina, academia, animais, mudanças, obras, barulho, garagem, "

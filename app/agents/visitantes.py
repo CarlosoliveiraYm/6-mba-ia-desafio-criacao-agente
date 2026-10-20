@@ -7,7 +7,7 @@ Sub-agente pelo mesmo motivo do especialista de reservas: a confirmação de
 from google.adk.agents import LlmAgent
 
 from app.agents.callbacks import ajustar_resposta, bloquear_repeticao
-from app.agents.modelo import criar_modelo
+from app.agents.modelo import BaseLlm, criar_modelo
 from app.tools.visitantes import TOOLS_VISITANTES
 
 NOME = "especialista_visitantes"
@@ -37,14 +37,17 @@ ferramentas nesta conversa.
 - Se a nova mensagem for sobre reservas, transfira direto para especialista_reservas. \
 Para qualquer outro assunto que não seja visitante, transfira para aurora_principal.
 
+Ao responder, repita datas, códigos e nomes exatamente como vieram das \
+ferramentas, no formato AAAA-MM-DD.
+
 Responda em português, de forma breve.
 """
 
 
-def criar_especialista_visitantes(nome_modelo: str) -> LlmAgent:
+def criar_especialista_visitantes(modelo: str | BaseLlm) -> LlmAgent:
     return LlmAgent(
         name=NOME,
-        model=criar_modelo(nome_modelo),
+        model=criar_modelo(modelo),
         description=(
             "Autoriza a entrada de visitantes e lista os visitantes do apartamento do morador."
         ),
