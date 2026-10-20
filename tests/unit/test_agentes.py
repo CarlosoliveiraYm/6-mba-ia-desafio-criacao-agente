@@ -46,6 +46,7 @@ def test_principal_tem_dois_subagentes_e_o_regulamento_como_agent_tool(app_adk):
     ]
     # O principal não tem tools de dados: só a AgentTool do regulamento.
     assert all(isinstance(t, AgentTool) for t in raiz.tools)
+    assert all(t.skip_summarization for t in raiz.tools if isinstance(t, AgentTool))
 
 
 def test_tools_confirmaveis_ficam_nos_subagentes(app_adk):

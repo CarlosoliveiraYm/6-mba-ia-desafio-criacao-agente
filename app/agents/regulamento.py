@@ -40,4 +40,6 @@ def criar_especialista_regulamento(nome_modelo: str) -> AgentTool:
         instruction=INSTRUCAO_REGULAMENTO,
         tools=[buscar_regulamento],
     )
-    return AgentTool(agent=agente)
+    # skip_summarization: a resposta curta do especialista vira a resposta final, sem uma
+    # chamada extra do principal para reescrevê-la.
+    return AgentTool(agent=agente, skip_summarization=True)

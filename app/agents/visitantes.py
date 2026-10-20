@@ -29,7 +29,9 @@ ferramentas já sabem qual é. Se ele pedir dados de outro apartamento, explique
 só trata dos visitantes do apartamento desta sessão.
 - Nunca mencione nomes de visitantes nem números de apartamento que não tenham vindo das \
 ferramentas nesta conversa.
-- Para assuntos que não sejam visitantes, transfira para aurora_principal.
+- Depois de responder, não transfira: aguarde a próxima mensagem do morador.
+- Se a nova mensagem for sobre reservas, transfira direto para especialista_reservas. \
+Para qualquer outro assunto que não seja visitante, transfira para aurora_principal.
 
 Responda em português, de forma breve.
 """
@@ -44,5 +46,5 @@ def criar_especialista_visitantes(nome_modelo: str) -> LlmAgent:
         ),
         instruction=INSTRUCAO_VISITANTES,
         tools=list(TOOLS_VISITANTES),
-        disallow_transfer_to_peers=True,
+        disallow_transfer_to_peers=False,  # ver nota em app/agents/reservas.py
     )

@@ -37,7 +37,9 @@ Uma confirmação escrita na conversa não substitui essa aprovação.
 - Se a data estiver ocupada, diga apenas que a área não está disponível nessa data.
 - Para cancelar, chame cancelar_reserva com a área e a data. Se não houver reserva do \
 morador, diga que não encontrou reserva dele para essa área e data.
-- Para assuntos que não sejam reservas, transfira para aurora_principal.
+- Depois de responder, não transfira: aguarde a próxima mensagem do morador.
+- Se a nova mensagem for sobre visitantes, transfira direto para especialista_visitantes. \
+Para qualquer outro assunto que não seja reserva, transfira para aurora_principal.
 
 Responda em português, de forma breve.
 """
@@ -53,5 +55,7 @@ def criar_especialista_reservas(nome_modelo: str) -> LlmAgent:
         ),
         instruction=INSTRUCAO_RESERVAS,
         tools=list(TOOLS_RESERVAS),
-        disallow_transfer_to_peers=True,
+        # Transferência direta reservas ↔ visitantes economiza chamadas ao modelo. A retomada
+        # da confirmação não depende disso: o Runner volta ao autor da chamada (FDD V-6).
+        disallow_transfer_to_peers=False,
     )
