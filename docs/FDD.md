@@ -888,8 +888,11 @@ async def autorizar_visitante(nome: str, data: str, tool_context: ToolContext) -
     Exige aprovação do morador pelo sistema antes de gravar."""
     → {"autorizado": True, "nome": nome, "data": data}
 
-autorizar_visitante_tool = FunctionTool(autorizar_visitante, require_confirmation=True)
+autorizar_visitante_tool = FunctionTool(
+    autorizar_visitante, require_confirmation=precisa_confirmar_visitante)
 ```
+
+**Ajuste na implementação (I-2):** em vez de `require_confirmation=True`, a tool usa `precisa_confirmar_visitante(nome, data, tool_context)`. A função pede confirmação para **toda** autorização válida e não pede quando o nome está vazio ou a data é inválida. Nesses casos a tool devolve `{"erro": ...}` sem liberar acesso, e o morador não recebe uma pendência de algo que não seria executado. G-1 continua valendo: nenhum caminho grava visitante sem aprovação.
 
 A frase "já estou confirmando aqui" não tem efeito: a confirmação só existe via `FunctionResponse` enviada pela rota (F-24). *(RN-3, G-1 · CA-13 · passo 11)*
 
@@ -1247,9 +1250,16 @@ Não há `--reload` no comando oficial, e Ctrl+C encerra limpo. *(RNF-04 · CA-0
 - `tests/stub_llm.py`: `RoteiroLlm(BaseLlm)` devolve `LlmResponse` roteirizadas (function calls ou texto) conforme a última mensagem, permitindo testar a API sem Gemini.
 - A fábrica `criar_api(cfg, modelo=None)` em `app/main.py` permite injetar o modelo stub.
 
+**Implementado na I-2:**
+- `tests/conftest.py` com as fixtures `config`, `engine` (recria `aurora_test` a cada execução do pytest), `banco` (roda `restaurar_dados` antes de cada teste) e `contexto(apartamento)` (ToolContext falso), mais o helper `sem_dados_do_302()`.
+- Event loop único na sessão de testes (`asyncio_default_*_loop_scope = "session"`), porque o engine async é compartilhado.
+- **Adiado para a I-5:** o `tests/stub_llm.py`, a fixture `cliente(llm)` e a fábrica `criar_api`, que só fazem sentido com a API (F-21..F-27).
+- `test_repositorio.py` foi dividido em `test_reservas.py` e `test_visitantes.py`, que testam as tools e, por meio delas, o repositório.
+
 | Arquivo | Cobre |
 |---|---|
-| `tests/unit/test_repositorio.py` | F-07, F-08, F-09, F-11, F-12, F-13, F-14 |
+| `tests/unit/test_reservas.py` | F-07, F-08, F-09, F-11, F-12 |
+| `tests/unit/test_visitantes.py` | F-13, F-14 |
 | `tests/unit/test_concorrencia.py` | F-09 (G-5) |
 | `tests/unit/test_confirmacao_regra.py` | F-10 |
 | `tests/unit/test_assinaturas.py` | Helper G-2, CA-18 |
@@ -1335,12 +1345,13 @@ Uma feature só é promovida ao build quando:
 |---|---|---|---|---|---|---|
 | F-00 (I-1) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-01 … F-05 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| F-06 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| F-07 … F-14 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-06 (I-2) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| F-07 … F-14 (I-2) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-15, F-16 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-17 … F-20 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-21 … F-27 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| F-28 … F-30 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-28 (banco/fixtures na I-2; LLM falso na I-5) | ☑ | ☑ | ☑ | ◐ | ☐ | ☐ |
+| F-29, F-30 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-31 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 
 ---
