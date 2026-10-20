@@ -593,6 +593,11 @@ include = ["app", "scripts", "tests"]
 
 Para os `project.scripts` funcionarem, o projeto precisa ser instalável. Isso exige `[build-system]` com hatchling e `packages = ["app", "scripts"]`.
 
+Ajustes feitos na implementação (I-0):
+- O extra `google-adk[extensions]` foi removido. O `DatabaseSessionService` só precisa de `sqlalchemy` + `asyncpg`, que já são dependências diretas.
+- `[tool.ruff] extend-exclude = ["docs"]`, porque o `ruff format` tentava formatar o pseudocódigo dos blocos Python do PRD/FDD.
+- `Config.validar_gemini()` separa a validação das variáveis do Gemini, para que `uv run restaurar` rode sem `GOOGLE_API_KEY`.
+
 **Pronto quando:** `uv sync` é limpo, `uv run api --help` e `uv run restaurar --help` resolvem, `uv run ruff check .` e `uv run pyright` passam, e `uv.lock` está atualizado. *(CA-01)*
 
 ---
@@ -1318,12 +1323,14 @@ Uma feature só é promovida ao build quando:
 | Feature | Walkthrough 1% | Design 40% | Insp. design 3% | Código 45% | Insp. código 10% | Build 1% |
 |---|---|---|---|---|---|---|
 | F-00 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| F-01 … F-06 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-01 … F-05 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| F-06 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-07 … F-14 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-15, F-16 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-17 … F-20 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-21 … F-27 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| F-28 … F-31 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-28 … F-30 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-31 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 
 ---
 
