@@ -1356,6 +1356,16 @@ Não há `--reload` no comando oficial, e Ctrl+C encerra limpo. *(RNF-04 · CA-0
 
 **Pronto quando:** o fluxo inteiro passa duas vezes seguidas, com restauração entre as execuções. *(CA-01..CA-28)*
 
+**Implementado na I-6:**
+- O fluxo foi dividido em `tests/e2e/test_antes_do_reinicio.py` (passos 1–12) e `tests/e2e/test_depois_do_reinicio.py` (passos 13–14). Os helpers ficam em `tests/e2e/comum.py`.
+- O estado entre as duas fases fica em `tests/e2e/estado.json`, que é ignorado pelo Git: id da S1, contagem de eventos e códigos criados.
+- A URL da API pode ser alterada pela variável `AURORA_BASE_URL`.
+
+**Execução em 2026-10-20** (`gemini-3.5-flash-lite`, API real, PostgreSQL, Ctrl+C real entre as fases):
+- **Passos 1–12:** 12/12 em 13 min 51 s.
+- **Passos 13–14:** 2/2 em 2 min 14 s.
+- **Ressalva:** a definição de pronto pede **duas** execuções seguidas. Até aqui o fluxo completo pela API rodou **uma vez**. Antes dele, o roteiro direto no Runner (`spikes/agentes/roteiro.py`) teve duas execuções 24/24. Uma segunda execução completa do E2E continua pendente: leva ~16 min e consome cota.
+
 ---
 
 ### F-30 — Documentar a arquitetura, as garantias e a execução no README
@@ -1426,7 +1436,8 @@ Uma feature só é promovida ao build quando:
 | F-23 (adiantada na I-4) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-21, F-22, F-24 … F-27 (I-5) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-28 (banco/fixtures na I-2; LLM falso na I-5) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
-| F-29, F-30 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-29 (I-6; E2E 14/14 com Gemini) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
+| F-30 (I-6; 42 links do README validados) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-31 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 
 ---
