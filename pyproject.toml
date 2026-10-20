@@ -7,7 +7,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "google-adk==2.2.0",          # versão exata; revisar após o spike F-00
+    "google-adk==2.2.0",          # versão exata, validada no spike F-00 (docs/FDD.md)
     "fastapi",
     "uvicorn[standard]",
     "sqlalchemy[asyncio]>=2",
