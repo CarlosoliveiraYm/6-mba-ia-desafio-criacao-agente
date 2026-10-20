@@ -6,8 +6,6 @@ __pycache__/
 spikes/**/estado.json
 tests/e2e/estado.json
 
-# Arquivos pessoais/locais (fora da entrega)
+
 .vscode/
-Prompt.md
-README _OLD.md
-iniciar.md
+
