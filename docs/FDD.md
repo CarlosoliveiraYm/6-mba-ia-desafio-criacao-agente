@@ -525,11 +525,20 @@ Convenções:
 
 | Cenário | Variante (a) só `new_message` | Variante (b) + `invocation_id` |
 |---|---|---|
-| Mesmo processo, aprovar | ☐ | ☐ |
-| Mesmo processo, negar | ☐ | ☐ |
-| Após reinício, aprovar | ☐ | ☐ |
-| Após reinício, negar | ☐ | ☐ |
-| Reenvio do mesmo `id` (deve ser bloqueado pela API) | ☐ | ☐ |
+| Mesmo processo, aprovar | ☑ 1 execução | não testada |
+| Mesmo processo, negar | ☑ 0 execuções | não testada |
+| Após reinício, aprovar | ☑ 1 execução | não testada |
+| Após reinício, negar | ☑ 0 execuções | não testada |
+| Reenvio do mesmo `id` (deve ser bloqueado pela API) | ☑ `id` sai das pendências após a resposta | não testada |
+
+#### Resultado do spike (2026-10-20)
+
+- **Decisão:** variante **(a)**: só a `new_message` com a `FunctionResponse`, e `USAR_INVOCATION_ID = False`. A (b) não precisou ser testada (regra 1 da árvore).
+- **Ambiente:** `google-adk==2.2.0` (mantida), `DatabaseSessionService` em PostgreSQL 16 e topologia root → sub-agente com `transfer_to_agent`, `disallow_transfer_to_peers=True` e `ResumabilityConfig(is_resumable=True)`.
+- **Sequência observada:** `principal` chama `transfer_to_agent`. Em seguida, `especialista_cobrancas` chama `acao_cobrada`, e a tool devolve `{"error": "...requires confirmation..."}` acompanhada de `adk_request_confirmation` (a execução pausa com `resposta = ""`). Na resposta, o Runner volta ao `especialista_cobrancas`, que executa a tool e gera o texto final.
+- **Modelo:** `gemini-3.6-flash` para o principal e os especialistas. Consumo medido: **2 chamadas ao LLM no turno que pede a confirmação** (root + especialista) e **1 chamada na resposta**. Projeção para o fluxo completo: cerca de 20 turnos × 2–3 chamadas, mais o especialista de regulamento, dá **~60 chamadas** (~120 com a margem do E2E). Os limites do projeto precisam ser conferidos no AI Studio.
+- **Achado:** a primeira execução falhou com **`503 UNAVAILABLE`** ("model is experiencing high demand"), por sobrecarga do Gemini, não por erro do código. **Mitigação adotada:** todo agente usa `Gemini(model=..., retry_options=HttpRetryOptions(attempts=6, initial_delay=2, max_delay=30, exp_base=2, jitter=1, http_status_codes=[429, 500, 503, 504]))`, num helper `criar_modelo()` (F-20). Com isso, as execuções seguintes passaram.
+- Código do spike: `spikes/confirmacao/spike.py`.
 
 **Árvore de decisão (critério de saída):**
 
@@ -1012,6 +1021,8 @@ Pelo V-9, a execução interna roda em `InMemorySessionService`. Na sessão prin
 
 ### F-20 — Montar o agente principal e o `App` resumível do assistente
 
+Todos os agentes recebem o modelo por `criar_modelo(nome)` (`app/agents/modelo.py`): um `Gemini` com `retry_options` para 429/500/503/504, conforme o resultado do spike F-00.
+
 ```python
 # app/agents/principal.py
 def criar_agente_principal(cfg: Config) -> LlmAgent:
@@ -1322,7 +1333,7 @@ Uma feature só é promovida ao build quando:
 
 | Feature | Walkthrough 1% | Design 40% | Insp. design 3% | Código 45% | Insp. código 10% | Build 1% |
 |---|---|---|---|---|---|---|
-| F-00 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| F-00 (I-1) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-01 … F-05 (I-0) | ☑ | ☑ | ☑ | ☑ | ☑ | ☑ |
 | F-06 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | F-07 … F-14 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
